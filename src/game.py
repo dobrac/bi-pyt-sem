@@ -1,9 +1,13 @@
 import random
 from collections import namedtuple
 from enum import Enum
+from typing import List, Union, Any
+
 import numpy as np
 import pyglet
+from numpy.core._multiarray_umath import ndarray
 from pyglet import shapes
+from pyglet.shapes import Rectangle, Circle
 
 
 class Direction(Enum):
@@ -29,6 +33,11 @@ class SnakePart:
 
 
 class Snake:
+    dimensions: Dimensions
+    border_size: int
+    head: SnakePart
+    body: list[SnakePart]
+
     def __init__(self, dimensions: Dimensions, x: int, y: int):
         self.dimensions = dimensions
         self.border_size = 1
@@ -76,16 +85,27 @@ class Snake:
             for i in range(size):
                 current = self.body[i]
                 if i == size - 1:
-                    next = self.head
+                    next_item = self.head
                 else:
-                    next = self.body[i + 1]
+                    next_item = self.body[i + 1]
 
-                self.update_pos(current, next.direction)
+                self.update_pos(current, next_item.direction)
 
         self.update_pos(self.head, self.head.direction)
 
 
 class Arena:
+    grid_size: int
+    step_size: float
+    dimensions: Dimensions
+
+    game: ndarray(BoardEntity)
+    last_run: int
+    timestamp: int
+
+    score: int
+    snake: Snake
+
     def __init__(self, height: int, width: int, grid_size: int = 40, speed: float = 1.0 / 10):
         self.grid_size = grid_size
         self.step_size = speed
@@ -150,7 +170,12 @@ class Arena:
 
     def draw(self):
         batch = pyglet.graphics.Batch()
-        s = []
+        s: list[Union[Rectangle, Circle]] = []
+
+        # background color
+        s.append(shapes.Rectangle(0, 0, self.dimensions.cols * self.grid_size,
+                                  self.dimensions.rows * self.grid_size,
+                                  color=(20, 20, 20), batch=batch))
 
         for row in range(self.dimensions.rows):
             for col in range(self.dimensions.cols):
@@ -167,9 +192,9 @@ class Arena:
                                               color=(0,
                                                      210,
                                                      0), batch=batch))
-                else:
-                    s.append(shapes.Rectangle(x, y, self.grid_size, self.grid_size,
-                                              color=(20, 20, 20), batch=batch))
+                    # radius = self.grid_size // 3
+                    # s.append(shapes.Circle(x + self.grid_size // 2, y + self.grid_size // 2, radius, color=(0, 0, 240),
+                    #                        batch=batch))
 
         snake = self.snake
 
